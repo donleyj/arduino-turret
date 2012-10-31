@@ -6,7 +6,7 @@ JMyron webCam;
 int sampleWidth, sampleHeight;
 int numSamplePixels;
 int[] oldPixels;
-int thresh = 9;
+int thresh = 11;
 int blueDiff;
 int greenDiff;
 int redDiff;
@@ -97,8 +97,30 @@ void draw() {
     xAvg = xTotal / sum;
     yAvg = yTotal / sum;
     fill(0,255,0);
-    rect(xAvg * sampleWidth, yAvg * sampleHeight, sampleWidth, sampleHeight);
+    int xCoord = xAvg * sampleWidth;
+    int yCoord = yAvg * sampleHeight;
+    boolean fire = true;
+    rect(xCoord, yCoord, sampleWidth, sampleHeight);
+    if(xCoord > (width / 2) + 32){
+      System.out.println("Move Right");
+      fire = false;
+    }
+    if(xCoord < (width / 2) - 32){
+      System.out.println("Move Left");
+      fire = false;
+    }
+    if(yCoord > (height / 2) + 24){
+      System.out.println("Move Down");
+      fire = false;
+    }
+    if(yCoord < (height / 2) - 24){
+      System.out.println("Move Up");
+      fire = false;
+    }
+    if(fire)
+      System.out.println("FIRE!");
   }
+  System.out.println("");
   
 }
 
