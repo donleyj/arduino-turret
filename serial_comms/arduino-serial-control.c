@@ -19,14 +19,14 @@
  * Todo:
  * If there's time, implement unbuffered input:
  *   http://www.smashedstack.cu.cc/unbuffered-input-terminal/
- * 
+ *
  * stdint.h, errno.h, and sys/ioctl.h (?) appear unnecessary at a glance
  * Maybe they're necessary on older compilers (I'm compiling against gcc4)?
  *
  */
 
 #include <stdio.h>    /* Standard input/output definitions */
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <stdint.h>   /* Standard types */
 #include <string.h>   /* String function definitions */
 #include <unistd.h>   /* UNIX standard function definitions */
@@ -46,15 +46,15 @@ int serialport_writebyte(int fd, uint8_t b);
  * int serialport_read_until(int fd, char* buf, char until);
  */
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
     int fd = 0;
+    int tmpfile = -1;
     char serialport[256];
     int baudrate = B9600;  /* default */
     int rc;
 	unsigned char press;
 	bool cxn_established = false;
-	
 
     if (argc == 1)
 	{
@@ -67,16 +67,17 @@ int main(int argc, char *argv[])
     static struct option loptions[] = {
         {"help",       no_argument,       0, 'h'},
         {"port",       required_argument, 0, 'p'},
-        {"baud",       required_argument, 0, 'b'}
+        {"baud",       required_argument, 0, 'b'},
+        {"file",       required_argument, 0, 'f'}
     };
-    
+
 	while (1)
 	{
 		opt = getopt_long (argc, argv, "hp:b:",
 						   loptions, &option_index);
-		
+
 		if (opt == -1) break;
-		
+
 		switch (opt)
 		{
 			case '0': break;
@@ -97,15 +98,24 @@ int main(int argc, char *argv[])
 				if (fd == -1) return -1;
 				cxn_established = true;
 				break;
+            case 'f':
+                tmpfile = open(optarg, O_RDONLY);
+                if (tmpfile == -1)
+                {
+                    perror(argv[0]);
+                    return EXIT_FAILURE;
+                }
+                dup2(STDIN_FILENO, tmpfile);
+                break;
 		}
 	}
-	
+
 	if (!cxn_established)
 	{
 		fputs("Error: port number is a required argument", stderr);
 		return EXIT_FAILURE;
 	}
-	
+
 	puts("Press space to exit. Enter a 'd' for 1 and a 's' for 0.");
 	while ((press = getchar()) != ' ')
 	{
@@ -132,7 +142,7 @@ int main(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 } /* end main */
-    
+
 int serialport_writebyte( int fd, uint8_t b)
 {
     int n = write(fd,&b,1);
@@ -146,7 +156,7 @@ int serialport_write(int fd, const char* str)
 {
     int len = strlen(str);
     int n = write(fd, str, len);
-    if( n!=len ) 
+    if( n!=len )
         return -1;
     return 0;
 }*/
@@ -156,7 +166,7 @@ int serialport_read_until(int fd, char* buf, char until)
 {
     char b[1];
     int i=0;
-    do { 
+    do {
         int n = read(fd, b, 1);  // read a char at a time
         if( n==-1) return -1;    // couldn't read
         if( n==0 ) {
@@ -178,7 +188,7 @@ int serialport_init(const char* serialport, int baud)
 {
     struct termios toptions;
     int fd;
-    
+
     /*fprintf(stderr,"init_serialport: opening port %s @ %d bps\n",
               serialport,baud);*/
 
@@ -187,7 +197,7 @@ int serialport_init(const char* serialport, int baud)
         perror("init_serialport: Unable to open port ");
         return -1;
     }
-    
+
     if (tcgetattr(fd, &toptions) < 0) {
         perror("init_serialport: Couldn't get term attributes");
         return -1;
@@ -227,7 +237,7 @@ int serialport_init(const char* serialport, int baud)
     /* see: http://unixwiz.net/techtips/termios-vmin-vtime.html */
     toptions.c_cc[VMIN]  = 0;
     toptions.c_cc[VTIME] = 20;
-    
+
     if (tcsetattr(fd, TCSANOW, &toptions) < 0) {
         perror("init_serialport: Couldn't set term attributes");
         return -1;
