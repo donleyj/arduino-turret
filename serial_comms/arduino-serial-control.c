@@ -49,7 +49,7 @@ int serialport_writebyte(int fd, uint8_t b);
 int main(int argc, char *argv[])
 {
     int fd = 0;
-    int tmpfile = -1;
+    FILE * tmpfile = stdin;
     char serialport[256];
     int baudrate = B9600;  /* default */
     int rc;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 
 	while (1)
 	{
-		opt = getopt_long (argc, argv, "hp:b:",
+		opt = getopt_long (argc, argv, "hp:b:f:",
 						   loptions, &option_index);
 
 		if (opt == -1) break;
@@ -99,13 +99,12 @@ int main(int argc, char *argv[])
 				cxn_established = true;
 				break;
             case 'f':
-                tmpfile = open(optarg, O_RDONLY);
-                if (tmpfile == -1)
+                tmpfile = fopen(optarg, "r");
+                if (tmpfile == NULL)
                 {
                     perror(argv[0]);
                     return EXIT_FAILURE;
                 }
-                dup2(STDIN_FILENO, tmpfile);
                 break;
 		}
 	}
@@ -117,7 +116,7 @@ int main(int argc, char *argv[])
 	}
 
 	puts("Press space to exit. Enter a 'd' for 1 and a 's' for 0.");
-	while ((press = getchar()) != ' ')
+	while ((press = getc(tmpfile)) != ' ')
 	{
 		switch (press)
 		{
@@ -133,6 +132,8 @@ int main(int argc, char *argv[])
 				rc = serialport_writebyte(fd, (uint8_t)1);
 				break;
 			case 10: /* newline */
+				break;
+			case 255: /* eof */
 				break;
 			default:
 				printf("Unrecognized: %i\n", (int)press);
