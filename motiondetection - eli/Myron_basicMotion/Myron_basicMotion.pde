@@ -8,7 +8,7 @@ JMyron webCam;
 int sampleWidth, sampleHeight;
 int numSamplePixels;
 int[] oldPixels;
-int thresh = 15;
+int thresh = 13;
 int blueDiff;
 int greenDiff;
 int redDiff;
@@ -42,6 +42,11 @@ void setup() {
   
   try{
     file = new File("C:\\MotionDetection\\motion.txt");
+    
+    file.delete();
+    //file = new File("youFileName.txt");
+    //file.createNewFile();
+    
     output = new BufferedWriter(new FileWriter(file));
   }catch(IOException ex) {
     System.out.println("error");
