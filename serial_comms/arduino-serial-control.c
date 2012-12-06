@@ -120,17 +120,22 @@ int main(int argc, char *argv[])
 	{
 		switch (press)
 		{
-			case 'a':
-				puts("'a' has not been implemented yet.");
+			case 'l':
+				puts("Sent a 2");
+                                rc = serialport_writebyte(fd, (uint8_t)2);
 				break;
-			case 's':
+			case 'n':
 				puts("Sent a 0");
 				rc = serialport_writebyte(fd, (uint8_t)0);
 				break;
-			case 'd':
+			case 'r':
 				puts("Sent a 1");
 				rc = serialport_writebyte(fd, (uint8_t)1);
 				break;
+                        case 'f':
+                                puts("Sent a 3 (not yet implemented)");
+                                rc = serialport_writebyte(fd, (uint8_t)3);
+                                break;
 			case 10: /* newline */
 				break;
 			case 255: /* eof */
