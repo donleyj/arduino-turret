@@ -69,11 +69,45 @@ void setup() {
 }
 
 void draw() {
+  try {
+    Thread.sleep(250);
+  } catch (InterruptedException e){
+    System.out.println("error");
+  }
   String clientMsg = "0000";
   webCam.update();
   int[] curFrame = webCam.image();
   curSquare = 0;
   detectedMotion = new boolean[squares*squares];
+
+  int locks = 0;
+  int location = 0;
+
+  for(int y = 0; y < 12; y += 1){
+    for(int x = 0; x < width; x+= 1){
+      if(locks < 3){
+        float tempr = red(curFrame[x+y*width]);
+        float tempg = green(curFrame[x+y*width]);
+        float tempb = blue(curFrame[x+y*width]);
+        if((tempr < 120)&&(tempg < 50)&&(tempb < 80)){
+          locks++;
+          //System.out.println(locks);
+        } else {
+          locks = 0;
+        }
+      } else {
+        location = x;
+        x = width;
+        y = 12;
+      }
+    }
+  }
+  if(locks == 3){
+    System.out.println("Turret found at: ");
+    System.out.println(location);
+  } else {
+    //System.out.println("Turret not found.");
+  }
 
   // go through all the cells
   for (int y=0; y < height; y += sampleHeight) {
@@ -111,6 +145,7 @@ void draw() {
         blueDiff = (int)abs(blue(oldPixels[curSquare]) - b);
         totalDiff = redDiff+greenDiff+blueDiff;
         if (totalDiff > thresh){
+          //Make the square red
           fill(255, 0, 0);
           detectedMotion[curSquare] = true;
         } else {
@@ -139,19 +174,27 @@ void draw() {
       sum++;
     }
   }
-  clientMsg = "none";
+  clientMsg = "N";
   if(sum > 0){
     xAvg = xTotal / sum;
-    yAvg = yTotal / sum;
+    yAvg = (yTotal / sum);
     clientMsg = null;
     fill(0,255,0);
     int xCoord = xAvg * sampleWidth;
-    int yCoord = yAvg * sampleHeight;
+    int yCoord = (yAvg * sampleHeight);//+12;
     rect(xCoord, yCoord, sampleWidth, sampleHeight);
-    clientMsg = "h:" + (xCoord - (width /2)) + " v:" + (yCoord - (height / 2));
+    if (xCoord > (width / 2) + 15){
+      clientMsg = "L";
+    } else if (xCoord < (width / 2) - 15){
+      clientMsg = "R";
+    } else {
+      clientMsg = "F";
+    }
+      
+    //clientMsg = "h:" + (xCoord - (width /2)) + " v:" + (yCoord - (height / 2));
   }
   try{
-    output.write(clientMsg + "\n");
+    output.write(clientMsg);
     output.flush();
   } catch (IOException ex1){
     System.out.println(ex1);
