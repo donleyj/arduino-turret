@@ -1,10 +1,13 @@
+#include <AFMotor.h>
+
+AF_DCMotor motor(1, MOTOR12_64KHZ); // 64KHz pwm
 const int pin = 13;
 
 void setup()
 {
   Serial.begin(9600);
   pinMode(pin, OUTPUT);
-  // start in an off state
+  motor.setSpeed(255);
   digitalWrite(pin, LOW);
 }
 
@@ -15,23 +18,23 @@ void loop()
     // Serial.parseInt interprets character data
     // we want Serial.read() since we're getting raw 0s/1s
     int a = (int) Serial.read();
-    // show what we're getting in the arduino serial monitor
+    //DEBUG show what we're getting in the arduino serial monitor
     Serial.println(a);
     if (a == 1)
     {
-      //motor_right
+      motor.run(FORWARD);
     }
     else if (a == 0)
     {
-      //motor_stop
+      motor.run(RELEASE);
     }
     else if (a == 2)
     {
-      //motor_left
+      motor.run(BACKWARD);
     }
     else if (a == 3)
     {
-      //motor_fire
+      //servo.trigger
     }
   }
 }
