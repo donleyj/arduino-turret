@@ -1,4 +1,6 @@
 import JMyron.*;
+import java.io.*;
+import java.net.*;
 
 int squares = 20;
 
@@ -6,7 +8,7 @@ JMyron webCam;
 int sampleWidth, sampleHeight;
 int numSamplePixels;
 int[] oldPixels;
-int thresh = 11;
+int thresh = 13;
 int blueDiff;
 int greenDiff;
 int redDiff;
@@ -14,8 +16,19 @@ int totalDiff;
 int curSquare;
 boolean first = true;
 boolean[] detectedMotion;
+//Socket dSocket = null;
+//PrintWriter out = null;
+
+Writer output = null;
+File file = null;
+boolean fire = false;
+
+String host = "ANDREW_ZIMNY-PC";
+
 
 void setup() {
+  
+  //JMyron setup
   size(320, 240);
 
   webCam = new JMyron();
@@ -26,9 +39,37 @@ void setup() {
   sampleHeight = height/squares;
   numSamplePixels = sampleWidth*sampleHeight;
   oldPixels = new int[squares*squares];
+  
+  try{
+    file = new File("C:\\MotionDetection\\motion.txt");
+    
+    file.delete();
+    //file = new File("youFileName.txt");
+    //file.createNewFile();
+    
+    output = new BufferedWriter(new FileWriter(file));
+  }catch(IOException ex) {
+    System.out.println("error");
+  }
+  
+  //PrintWriter out = null;
+/*
+  try {
+      dSocket = new Socket(host, 4444);
+      out = new PrintWriter(dSocket.getOutputStream(), true);
+      out.println("START");
+  } catch (UnknownHostException e) {
+      System.err.println("Don't know about host: " + host);
+      System.exit(1);
+  } catch (IOException e) {
+      System.err.println("Couldn't get I/O for the connection to: " + host);
+      System.exit(1);
+  }
+  */
 }
 
 void draw() {
+  String clientMsg = "0000";
   webCam.update();
   int[] curFrame = webCam.image();
   curSquare = 0;
@@ -48,9 +89,14 @@ void draw() {
           // add each pixel in the current cell's RGB values to the total
           // we have to multiply the y values by the width since we are 
           // using a one-dimensional array
-          r += red(curFrame[x+y*width+xIndex+yIndex*width]);
-          g += green(curFrame[x+y*width+xIndex+yIndex*width]);
-          b += blue(curFrame[x+y*width+xIndex+yIndex*width]); 
+          float tempr = red(curFrame[x+y*width+xIndex+yIndex*width]);
+          float tempg = green(curFrame[x+y*width+xIndex+yIndex*width]);
+          float tempb = blue(curFrame[x+y*width+xIndex+yIndex*width]); 
+          //if((tempg > 230)&&(tempr < 170)&&(tempb < 170))
+            //System.out.println("X: " + (xIndex + x) + " Y: " + (yIndex + y) + "   colors: r-" + tempr + " g-" + tempg + " b-" + tempb);
+          r += tempr;
+          g += tempg;
+          b += tempb;
         }
       }
 
@@ -93,40 +139,35 @@ void draw() {
       sum++;
     }
   }
+  clientMsg = "none";
   if(sum > 0){
     xAvg = xTotal / sum;
     yAvg = yTotal / sum;
+    clientMsg = null;
     fill(0,255,0);
     int xCoord = xAvg * sampleWidth;
     int yCoord = yAvg * sampleHeight;
-    boolean fire = true;
     rect(xCoord, yCoord, sampleWidth, sampleHeight);
-    if(xCoord > (width / 2) + 32){
-      System.out.println("Move Right");
-      fire = false;
-    }
-    if(xCoord < (width / 2) - 32){
-      System.out.println("Move Left");
-      fire = false;
-    }
-    if(yCoord > (height / 2) + 24){
-      System.out.println("Move Down");
-      fire = false;
-    }
-    if(yCoord < (height / 2) - 24){
-      System.out.println("Move Up");
-      fire = false;
-    }
-    if(fire)
-      System.out.println("FIRE!");
+    clientMsg = "h:" + (xCoord - (width /2)) + " v:" + (yCoord - (height / 2));
   }
-  System.out.println("");
+  try{
+    output.write(clientMsg + "\n");
+    output.flush();
+  } catch (IOException ex1){
+    System.out.println(ex1);
+  }
+  
   
 }
-
+  
 public void stop() {
+  System.out.println("Stop!");
+  try{
+    output.close();
+    System.out.println("Closed");
+  } catch (IOException ex2){
+    System.out.println();
+  }
   webCam.stop();
   super.stop();
 }
-
-
