@@ -70,33 +70,33 @@ int main(int argc, char *argv[])
         {"file",       required_argument, 0, 'f'}
     };
 
-	while (1)
-	{
-		opt = getopt_long (argc, argv, "hp:b:f:",
-						   loptions, &option_index);
+    while (1)
+    {
+        opt = getopt_long (argc, argv, "hp:b:f:",
+                           loptions, &option_index);
 
-		if (opt == -1) break;
+        if (opt == -1) break;
 
-		switch (opt)
-		{
-			case '0': break;
-			case 'h':
-				usage();
-				break;
-			case 'b':
-				if (cxn_established)
-				{
-					fputs("Error: baudrate must come before port number", stderr);
-					return EXIT_FAILURE;
-				}
-				baudrate = strtol(optarg,NULL,10);
-				break;
-			case 'p':
-				strcpy(serialport,optarg);
-				fd = serialport_init(optarg, baudrate);
-				if (fd == -1) return -1;
-				cxn_established = true;
-				break;
+        switch (opt)
+        {
+            case '0': break;
+            case 'h':
+                usage();
+                break;
+            case 'b':
+                if (cxn_established)
+                {
+                    fputs("Error: baudrate must come before port number", stderr);
+                    return EXIT_FAILURE;
+                }
+                baudrate = strtol(optarg,NULL,10);
+                break;
+            case 'p':
+                strcpy(serialport,optarg);
+                fd = serialport_init(optarg, baudrate);
+                if (fd == -1) return -1;
+                cxn_established = true;
+                break;
             case 'f':
                 tmpfile = fopen(optarg, "r");
                 if (tmpfile == NULL)
@@ -105,49 +105,49 @@ int main(int argc, char *argv[])
                     return EXIT_FAILURE;
                 }
                 break;
-		}
-	}
+        }
+    }
 
-	if (!cxn_established)
-	{
-		fputs("Error: port number is a required argument", stderr);
-		return EXIT_FAILURE;
-	}
+    if (!cxn_established)
+    {
+        fputs("Error: port number is a required argument", stderr);
+        return EXIT_FAILURE;
+    }
 
-	if (tmpfile == stdin)
-	{
-		puts("Press space to exit. l/r to rotate, n to stop, f to fire.");
-	}
+    if (tmpfile == stdin)
+    {
+        puts("Press space to exit. l/r to rotate, n to stop, f to fire.");
+    }
 
-	while ((press = getc(tmpfile)) != ' ')
-	{
-		switch (press)
-		{
-			case 'l':
-				puts("Sent a 2");
-                                serialport_writebyte(fd, (uint8_t)2);
-				break;
-			case 'n':
-				puts("Sent a 0");
-				serialport_writebyte(fd, (uint8_t)0);
-				break;
-			case 'r':
-				puts("Sent a 1");
-				serialport_writebyte(fd, (uint8_t)1);
-				break;
-                        case 'f':
-                                puts("Sent a 3");
-                                serialport_writebyte(fd, (uint8_t)3);
-                                break;
-			case 10: /* newline */
-				break;
-			case 255: /* eof */
-				break;
-			default:
-				printf("Unrecognized: %i\n", (int)press);
-				break;
-		}
-	}
+    while ((press = getc(tmpfile)) != ' ')
+    {
+        switch (press)
+        {
+            case 'l':
+                puts("Sent a 2");
+                serialport_writebyte(fd, (uint8_t)2);
+                break;
+            case 'n':
+                puts("Sent a 0");
+                serialport_writebyte(fd, (uint8_t)0);
+                break;
+            case 'r':
+                puts("Sent a 1");
+                serialport_writebyte(fd, (uint8_t)1);
+                break;
+            case 'f':
+                puts("Sent a 3");
+                serialport_writebyte(fd, (uint8_t)3);
+                break;
+            case 10: /* newline */
+                break;
+            case 255: /* eof */
+                break;
+            default:
+                printf("Unrecognized: %i\n", (int)press);
+                break;
+        }
+    }
 
     return EXIT_SUCCESS;
 } /* end main */
@@ -257,14 +257,16 @@ int serialport_init(const char* serialport, int baud)
 
 void usage(void)
 {
-    printf("Usage: arduino-serial-control [-b <baudrate>] -p <serialport>\n"
-	"Allows keyboard control of output to Arduino microcontroller board.\n"
-	"\n"
-	"Options:\n"
+    printf("Usage: arduino-serial-control [-b <baudrate>] -p <serialport> "
+    " [-f <file>]\n"
+    "Allows keyboard control of output to Arduino microcontroller board.\n"
+    "\n"
+    "Options:\n"
     "  -h, --help                   Print this help message\n"
     "  -b, --baud=baudrate          Baudrate (bps) of Arduino\n"
     "  -p, --port=serialport        Serial port Arduino is on (required)\n"
-	"\n"
-	"If using a specific baudrate, provide it before the port number.\n"
+    "  -f, --file                   Take input from a file\n"
+    "\n"
+    "If using a specific baudrate, provide it before the port number.\n"
     "\n");
 }
