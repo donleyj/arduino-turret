@@ -115,7 +115,11 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	puts("Press space to exit. Enter a 'd' for 1 and a 's' for 0.");
+	if (tmpfile == stdin)
+	{
+		puts("Press space to exit. l/r to rotate, n to stop, f to fire.");
+	}
+
 	while ((press = getc(tmpfile)) != ' ')
 	{
 		switch (press)
