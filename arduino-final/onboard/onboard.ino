@@ -10,7 +10,7 @@ void setup()
   motor.setSpeed(196);
   // Set up the trigger servo and move into position
   trigger.attach(10);
-  trigger.write(180);
+  trigger.write(170);
 }
 
 void loop()
@@ -19,7 +19,7 @@ void loop()
   {
     // Serial.parseInt interprets character data
     // we want Serial.read() since we're getting raw 0s/1s
-    int a = (int) Serial.read();
+    int a = (int) Serilal.read();
     //DEBUG show what we're getting in the arduino serial monitor
     Serial.println(a);
     if (a == 1)
@@ -37,8 +37,8 @@ void loop()
     else if (a == 3)
     {
       trigger.write(150);
-      delay(300);
-      trigger.write(180);
+      delay(250);
+      trigger.write(170);
     }
   }
 }
