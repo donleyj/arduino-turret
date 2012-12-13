@@ -10,29 +10,51 @@ JMyron webCam;
 int sampleWidth, sampleHeight;
 int numSamplePixels;
 int[] oldPixels;
-int thresh = 15;
+int thresh = 13;
 int blueDiff;
 int greenDiff;
 int redDiff;
 int totalDiff;
 int curSquare;
-int count = 0;
 boolean first = true;
 boolean[] detectedMotion;
+//Socket dSocket = null;
+//PrintWriter out = null;
 String filename;
-boolean rightEdge = false;
-boolean leftEdge = false;
-int location = 0;
 
 Writer output = null;
 File file = null;
 boolean fire = false;
 static String[] args;
 
+String host = "ANDREW_ZIMNY-PC";
 
-//Setup webcam, open file to be written to
+
+static public void main(String argv[]) {
+  args = argv.clone();
+  PApplet.main(new String[] { "Myron_basicMotion" });
+}
+
 void setup() {
-
+  //parse arguments, which is the filename and sensitivity
+  if(args.length!=2){
+    System.out.print(args.length);
+    System.out.println("Arguments invalid, using defaults.");
+    filename = "/home/andrew/Documents/motion.txt";
+    //exit();
+  } else {
+    filename = args[0];
+    try {
+      thresh = Integer.parseInt(args[1]);
+    } catch (NumberFormatException e){
+      System.out.println("invalid threshold.");
+      exit();
+    }
+    if(thresh < 1 || thresh > 50){
+      System.out.println("Threshold value outside allowed range.");
+      exit();
+    }
+  }
     
     //camera setup
     size(320, 240);
@@ -47,9 +69,12 @@ void setup() {
     oldPixels = new int[squares*squares];
     
     try{
-      file = new File("G:\\motion.txt");
+      file = new File(filename);
       
       file.delete();
+      //file = new File("youFileName.txt");
+      //file.createNewFile();
+      
       output = new BufferedWriter(new FileWriter(file));
     }catch(IOException ex) {
       System.out.println("File error");
@@ -58,67 +83,49 @@ void setup() {
   
 }
 
-int locateTurret(int[] curFrame){
-  
+void draw() {
+  try {
+    Thread.sleep(250);
+  } catch (InterruptedException e){
+    System.out.println("error");
+  }
+  String clientMsg = "0000";
+  webCam.update();
+  int[] curFrame = webCam.image();
+  curSquare = 0;
+  detectedMotion = new boolean[squares*squares];
+
   int locks = 0;
-  
-  for(int y = 0; y < 24; y += 1){
+  int location = 0;
+
+  for(int y = 0; y < 12; y += 1){
     for(int x = 0; x < width; x+= 1){
       if(locks < 3){
         float tempr = red(curFrame[x+y*width]);
         float tempg = green(curFrame[x+y*width]);
         float tempb = blue(curFrame[x+y*width]);
-        //Parameters for turret detection. Must be calibrated in different lighting.
-        if(((85 < tempr)&&(tempr < 110))&&((tempg > 40)&&(tempg < 60))&&((tempb > 50)&&(tempb < 75))){
+        if((tempr < 120)&&(tempg < 50)&&(tempb < 80)){
           locks++;
+          //System.out.println(locks);
         } else {
           locks = 0;
         }
       } else {
         location = x;
         x = width;
-        y = 24;
+        y = 12;
       }
     }
   }
   if(locks == 3){
-    count = 0;
-    System.out.println("Turret found at: ");
-   System.out.println(location);
-    if (location > 160){
-      rightEdge = true;
-      leftEdge = false;
-    }
-    if (location < 160){
-      leftEdge = true;
-      rightEdge = false;
-    }
+    //System.out.println("Turret found at: ");
+    //System.out.println(location);
   } else {
-    count++;
-    if(count >= 6){
-      if(leftEdge)
-        offEdge('r');
-      if(rightEdge)
-        offEdge('l');
-    }
     //System.out.println("Turret not found.");
   }
-  return location;
-}
-
-void draw(){
-
-  String clientMsg="n";
-  webCam.update();
-  int[] curFrame = webCam.image();
-
-  location = locateTurret(curFrame);
-  
-  curSquare = 40;
-  detectedMotion = new boolean[squares*squares];
 
   // go through all the cells
-  for (int y=24; y < height; y += sampleHeight) {
+  for (int y=0; y < height; y += sampleHeight) {
     for (int x=0; x < width; x += sampleWidth) {
       // reset the averages
       float r = 0;
@@ -133,7 +140,9 @@ void draw(){
           // using a one-dimensional array
           float tempr = red(curFrame[x+y*width+xIndex+yIndex*width]);
           float tempg = green(curFrame[x+y*width+xIndex+yIndex*width]);
-          float tempb = blue(curFrame[x+y*width+xIndex+yIndex*width]);
+          float tempb = blue(curFrame[x+y*width+xIndex+yIndex*width]); 
+          //if((tempg > 230)&&(tempr < 170)&&(tempb < 170))
+            //System.out.println("X: " + (xIndex + x) + " Y: " + (yIndex + y) + "   colors: r-" + tempr + " g-" + tempg + " b-" + tempb);
           r += tempr;
           g += tempg;
           b += tempb;
@@ -189,11 +198,10 @@ void draw(){
     int xCoord = xAvg * sampleWidth;
     int yCoord = (yAvg * sampleHeight);//+12;
     rect(xCoord, yCoord, sampleWidth, sampleHeight);
-    System.out.println("xCoord: " + xCoord + "  Turret: " + location);
-    if (xCoord > (location + 70)){
-      clientMsg = "r";
-    } else if (xCoord < (location) - 20){
+    if (xCoord > (location) + 15){
       clientMsg = "l";
+    } else if (xCoord < (location) - 15){
+      clientMsg = "r";
     } else {
       clientMsg = "f";
     }
@@ -201,93 +209,16 @@ void draw(){
     //clientMsg = "h:" + (xCoord - (width /2)) + " v:" + (yCoord - (height / 2));
   }
   try{
-
     output.write(clientMsg);
     output.flush();
-    Thread.sleep(50);
-    output.write('n');
-    output.flush();
-    Thread.sleep(50);
-    
-  } catch (Exception ex1){
+  } catch (IOException ex1){
     System.out.println(ex1);
   }
   
   
 }
-
-//A char is passed, either r or l depending on which way it went off
-void offEdge(char dir){
-  System.out.println("Moving turret back to the " + dir);
   
-      
-  int locks = 0;
-  int location =0;
-  
-  while((locks < 3)&&((location > 130)||(location < 190))){
-    
-    try {
-      Thread.sleep(50);
-
-      output.write('n');
-      output.flush();
-
-      Thread.sleep(50);
-      
-    } catch (Exception e){
-      System.out.println("error");
-    }
-    
-    
-    
-    webCam.update();
-    int[] curFrame = webCam.image();
-  
-    for(int y = 0; y < 24; y += 1){
-      for(int x = 0; x < width; x+= 1){
-        if(locks < 3){
-          float tempr = red(curFrame[x+y*width]);
-          float tempg = green(curFrame[x+y*width]);
-          float tempb = blue(curFrame[x+y*width]);
-          //Parameters for turret detection. Must be calibrated in different lighting.
-          if(((85 < tempr)&&(tempr < 110))&&((tempg > 40)&&(tempg < 60))&&((tempb > 50)&&(tempb < 75))){
-            locks++;
-            //System.out.println(locks);
-          } else {
-            locks = 0;
-          }
-        } else {
-          location = x;
-          x = width;
-          y = 24;
-        }
-      }
-    }
-    if(locks == 3){
-      System.out.println("Turret found at: ");
-     System.out.println(location);
-      if (location > 160){
-        rightEdge = true;
-        leftEdge = false;
-      }
-      if (location < 160){
-        leftEdge = true;
-        rightEdge = false;
-      }
-    } else {
-      try{
-        output.write(dir);
-        output.flush();
-      } catch (Exception e){
-      }
-     }
-    }
-
-
-}
-      
-      
-  void stop() {
+public void stop() {
   System.out.println("Stop!");
   try{
     output.close();
