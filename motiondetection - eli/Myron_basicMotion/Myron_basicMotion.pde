@@ -83,8 +83,8 @@ int locateTurret(int[] curFrame){
   }
   if(locks == 3){
     count = 0;
-    System.out.println("Turret found at: ");
-   System.out.println(location);
+    //System.out.println("Turret found at: ");
+    // System.out.println(location);
     if (location > 160){
       rightEdge = true;
       leftEdge = false;
@@ -101,17 +101,20 @@ int locateTurret(int[] curFrame){
       if(rightEdge)
         offEdge('l');
     }
-    //System.out.println("Turret not found.");
+    //Turret not found
   }
   return location;
 }
 
+//Main motion detection method
 void draw(){
-
+  
+  //Initialize the string to be sent as no movement
   String clientMsg="n";
   webCam.update();
   int[] curFrame = webCam.image();
 
+  //Figure out where the turret is
   location = locateTurret(curFrame);
   
   curSquare = 40;
@@ -189,7 +192,6 @@ void draw(){
     int xCoord = xAvg * sampleWidth;
     int yCoord = (yAvg * sampleHeight);//+12;
     rect(xCoord, yCoord, sampleWidth, sampleHeight);
-    System.out.println("xCoord: " + xCoord + "  Turret: " + location);
     if (xCoord > (location + 70)){
       clientMsg = "r";
     } else if (xCoord < (location) - 20){
@@ -197,11 +199,8 @@ void draw(){
     } else {
       clientMsg = "f";
     }
-      
-    //clientMsg = "h:" + (xCoord - (width /2)) + " v:" + (yCoord - (height / 2));
   }
   try{
-
     output.write(clientMsg);
     output.flush();
     Thread.sleep(50);
@@ -211,12 +210,11 @@ void draw(){
     
   } catch (Exception ex1){
     System.out.println(ex1);
-  }
-  
-  
+  }  
 }
 
 //A char is passed, either r or l depending on which way it went off
+//This method moves the turret until it is in the center of the webcam
 void offEdge(char dir){
   System.out.println("Moving turret back to the " + dir);
   
@@ -225,21 +223,14 @@ void offEdge(char dir){
   int location =0;
   
   while((locks < 3)&&((location > 130)||(location < 190))){
-    
     try {
       Thread.sleep(50);
-
       output.write('n');
       output.flush();
-
       Thread.sleep(50);
-      
     } catch (Exception e){
       System.out.println("error");
     }
-    
-    
-    
     webCam.update();
     int[] curFrame = webCam.image();
   
@@ -252,7 +243,6 @@ void offEdge(char dir){
           //Parameters for turret detection. Must be calibrated in different lighting.
           if(((85 < tempr)&&(tempr < 110))&&((tempg > 40)&&(tempg < 60))&&((tempb > 50)&&(tempb < 75))){
             locks++;
-            //System.out.println(locks);
           } else {
             locks = 0;
           }
@@ -264,8 +254,6 @@ void offEdge(char dir){
       }
     }
     if(locks == 3){
-      System.out.println("Turret found at: ");
-     System.out.println(location);
       if (location > 160){
         rightEdge = true;
         leftEdge = false;
@@ -285,8 +273,7 @@ void offEdge(char dir){
 
 
 }
-      
-      
+       
   void stop() {
   System.out.println("Stop!");
   try{
@@ -298,4 +285,4 @@ void offEdge(char dir){
   webCam.stop();
   super.stop();
 }
-//}
+
